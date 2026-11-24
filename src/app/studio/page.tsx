@@ -131,6 +131,9 @@ export default function DemoStudio() {
   const [tts, setTts] = useState(true);
   const spoken = useRef<Set<string>>(new Set());
   const ttsReady = useRef(false);
+  // Pause background polling while a request is in flight, so serverless hosts
+  // never see overlapping requests (keeps every call on the same warm instance).
+  const inFlight = useRef(0);
 
   const apply = useCallback((s: Snapshot & { error?: string }) => {
     setSnap(s);
@@ -138,6 +141,7 @@ export default function DemoStudio() {
   }, []);
 
   const refresh = useCallback(async () => {
+    if (inFlight.current > 0) return;
     try {
       const r = await fetch("/api/jobs", { cache: "no-store" });
       if (r.ok) setSnap(await r.json());
@@ -191,12 +195,14 @@ export default function DemoStudio() {
   const sendChat = useCallback(
     async (payload: Record<string, unknown>) => {
       setBusy(true);
+      inFlight.current++;
       try {
         const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         apply(await r.json());
       } catch (e) {
         setToast({ text: `Network error: ${(e as Error).message}`, tone: "err" });
       } finally {
+        inFlight.current--;
         setBusy(false);
       }
     },
@@ -205,8 +211,14 @@ export default function DemoStudio() {
 
   const godAction = useCallback(
     async (action: string) => {
-      const r = await fetch("/api/jobs", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) });
-      const data = await r.json();
+      inFlight.current++;
+      let data: Snapshot & { error?: string; before?: number; after?: number };
+      try {
+        const r = await fetch("/api/jobs", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) });
+        data = await r.json();
+      } finally {
+        inFlight.current--;
+      }
       apply(data);
       if (!data.error) {
         if (action === "reset") {
