@@ -47,10 +47,10 @@ export interface ChatInput {
 
 const greeting = () =>
   pushBot(
-    "नमस्ते! 🙏 *HunarID* में आपका स्वागत है — \"आपका हुनर, आपकी पहचान\"।\n\nअपना नाम, काम (जैसे बिजली, नल, चिनाई, बढ़ई), कितने साल का अनुभव और आपका इलाका बताइए। 🎙️ वॉइस नोट भेजें या टाइप करें।",
+    "नमस्ते! 🙏 *Evalipie.in* में आपका स्वागत है — \"आपका हुनर, आपकी पहचान\"।\n\nअपना नाम, काम (जैसे बिजली, नल, चिनाई, बढ़ई), कितने साल का अनुभव और आपका इलाका बताइए। 🎙️ वॉइस नोट भेजें या टाइप करें।",
     {
       translation:
-        "Welcome to HunarID — \"Your skill is your ID\". Tell us your name, trade, years of experience and area. Send a voice note or type.",
+        "Welcome to Evalipie.in — \"Your skill is your ID\". Tell us your name, trade, years of experience and area. Send a voice note or type.",
       lang: "hi",
     }
   );
@@ -303,12 +303,12 @@ async function assessVideo(input: ChatInput): Promise<{ error?: string }> {
 function sendCard(w: Worker) {
   pushBot(
     isEn(w.language)
-      ? `🎉 Congratulations! Your *HunarID Skill Card* is ready. Show this QR to any employer — no certificates needed.`
-      : `🎉 बधाई हो! आपका *HunarID स्किल कार्ड* तैयार है। यह QR किसी भी मालिक को दिखाएँ — किसी सर्टिफ़िकेट की ज़रूरत नहीं।`,
+      ? `🎉 Congratulations! Your *Evalipie.in Skill Card* is ready. Show this QR to any employer — no certificates needed.`
+      : `🎉 बधाई हो! आपका *Evalipie.in स्किल कार्ड* तैयार है। यह QR किसी भी मालिक को दिखाएँ — किसी सर्टिफ़िकेट की ज़रूरत नहीं।`,
     {
       kind: "card",
       lang: w.language,
-      translation: isEn(w.language) ? undefined : "Congratulations! Your HunarID Skill Card is ready.",
+      translation: isEn(w.language) ? undefined : "Congratulations! Your Evalipie.in Skill Card is ready.",
       meta: { workerId: w.id, level: w.level, trustScore: w.trustScore, trade: w.trade, name: w.name },
     }
   );
@@ -428,8 +428,8 @@ function respondToOffer(text: string): { error?: string } {
     s.demo.pendingJobId = null;
     pushBot(
       isEn(w.language)
-        ? `✅ Job confirmed! ${job.employer} has been notified.\n📍 ${job.area} · Start tomorrow 9:00 AM\n💰 ${inr(job.daily_wage)}/day × ${job.duration_days} days = *${inr(job.daily_wage * job.duration_days)}*\n\nYour number stays private 🔒 — the employer contacts you through HunarID.`
-        : `✅ काम पक्का! ${job.employer} को सूचित कर दिया गया है।\n📍 ${job.area} · कल सुबह 9 बजे से\n💰 ${inr(job.daily_wage)}/दिन × ${job.duration_days} दिन = *${inr(job.daily_wage * job.duration_days)}*\n\nआपका नंबर प्राइवेट रहेगा 🔒 — मालिक HunarID के ज़रिए संपर्क करेगा।`,
+        ? `✅ Job confirmed! ${job.employer} has been notified.\n📍 ${job.area} · Start tomorrow 9:00 AM\n💰 ${inr(job.daily_wage)}/day × ${job.duration_days} days = *${inr(job.daily_wage * job.duration_days)}*\n\nYour number stays private 🔒 — the employer contacts you through Evalipie.in.`
+        : `✅ काम पक्का! ${job.employer} को सूचित कर दिया गया है।\n📍 ${job.area} · कल सुबह 9 बजे से\n💰 ${inr(job.daily_wage)}/दिन × ${job.duration_days} दिन = *${inr(job.daily_wage * job.duration_days)}*\n\nआपका नंबर प्राइवेट रहेगा 🔒 — मालिक Evalipie.in के ज़रिए संपर्क करेगा।`,
       { lang: w.language, translation: isEn(w.language) ? undefined : `Job confirmed with ${job.employer}. Total ${inr(job.daily_wage * job.duration_days)}. Your number stays private.` }
     );
     logEvent("accept", `🤝 ${w.name} accepted ${job.employer}'s job at ${inr(job.daily_wage)}/day`);

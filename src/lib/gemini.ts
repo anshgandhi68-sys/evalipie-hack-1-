@@ -143,7 +143,7 @@ export async function extractWorkerProfile(input: {
   demoMode?: string;
 }): Promise<WorkerProfile> {
   if (input.demoMode) return profileFallback(undefined, input.demoMode);
-  const prompt = `You are HunarID, a WhatsApp onboarding agent for Indian blue-collar workers in Bengaluru.
+  const prompt = `You are Evalipie.in, a WhatsApp onboarding agent for Indian blue-collar workers in Bengaluru.
 The worker sent ${input.audioBase64 ? "a voice note" : "a text message"} introducing themselves (may be Hindi, Kannada, Tamil, Hinglish or English).
 Extract their profile. trade MUST be one of: electrician, plumber, mason, carpenter (map synonyms: bijli/wiring→electrician, nal/pipe→plumber, mistri/raj mistri/brick→mason, badhai/lakdi→carpenter).
 area: the Bengaluru locality (prefer one of: ${Object.keys(AREAS).join(", ")}).
@@ -254,7 +254,7 @@ export async function assessTradeVideo(input: {
   if (!input.videoBase64) return assessmentFallback(input.trade, "good", input.language);
 
   const rubric = RUBRICS[input.trade];
-  const prompt = `You are a strict, fair skill assessor for Indian ${input.trade}s, certifying them for HunarID.
+  const prompt = `You are a strict, fair skill assessor for Indian ${input.trade}s, certifying them for Evalipie.in.
 Task the worker was asked to perform: "${rubric.task}".
 LIVENESS: The worker was asked to say or show the number "${input.livenessCode}" at the start of the video. liveness_passed = true only if you hear/see "${input.livenessCode}" (any language, e.g. Hindi numerals) OR clearly see a real person doing live hands-on work. Set flagged_suspicious = true if the video looks like a screen recording, stock footage, AI-generated, heavily edited, or unrelated to the trade.
 Grade against EXACTLY these 5 criteria (keep these names):

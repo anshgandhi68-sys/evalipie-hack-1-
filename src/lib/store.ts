@@ -369,11 +369,11 @@ export function matchWorkers(
 // ============================================================
 // Cryptographic credential (HMAC-SHA256)
 // ============================================================
-const SECRET = process.env.HUNAR_SIGNING_SECRET || "hunarid-demo-signing-secret-v1";
+const SECRET = process.env.EVALIPIE_SIGNING_SECRET || process.env.HUNAR_SIGNING_SECRET || "evalipie-demo-signing-secret-v1";
 
 export function credentialPayload(w: Worker): string {
   return JSON.stringify({
-    iss: "HunarID",
+    iss: "Evalipie.in",
     sub: w.id,
     name: w.name,
     trade: w.trade,
@@ -482,7 +482,7 @@ function seedWorker(row: SeedRow, i: number): Worker {
 function seedEvents(): FeedEvent[] {
   const now = Date.now();
   const rows: [FeedEvent["type"], string, number][] = [
-    ["system", "HunarID agent online · WhatsApp channel connected", 0],
+    ["system", "Evalipie.in agent online · WhatsApp channel connected", 0],
     ["verify", "Kavitha N (Mason) verified via video assessment — Skilled", 9],
     ["job", "Brigade Facility Mgmt posted Plumber job in Malleshwaram · ₹950/day", 22],
     ["match", "Prakash Naik matched (1.2 km · Trust 87)", 23],

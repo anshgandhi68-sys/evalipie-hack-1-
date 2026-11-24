@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Evalipie · HunarID — Your skill is your ID",
-  description: "Voice-first WhatsApp AI agent that verifies blue-collar skills and protects fair wages.",
+  title: "Evalipie.in — Your skill is your ID",
+  description: "Evalipie.in: voice-first WhatsApp AI agent that verifies blue-collar skills and protects fair wages.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

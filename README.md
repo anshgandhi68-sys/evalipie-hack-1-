@@ -1,4 +1,4 @@
-# HunarID — "Your skill is your ID" · आपका हुनर, आपकी पहचान
+# Evalipie.in — "Your skill is your ID" · आपका हुनर, आपकी पहचान
 
 **Track 4 (UnlockED)** · A closed-loop, voice-first WhatsApp AI agent that turns an Indian blue-collar worker's *skill* into a verifiable digital identity — and protects their wages.
 
@@ -9,7 +9,7 @@
 ```bash
 npm install
 cp .env.example .env.local   # optionally add GEMINI_API_KEY
-npm run dev                  # http://localhost:3000
+npm run dev                  # http://localhost:3000  (landing) · /studio (live demo)
 ```
 
 - **Zero external setup**: no DB, no auth, no Twilio. Everything lives in an in-memory `globalThis` store pre-seeded with 20 realistic Bengaluru workers.
@@ -18,6 +18,7 @@ npm run dev                  # http://localhost:3000
 
 ## Demo script (3 minutes)
 
+0. Open `/` (landing) → **Launch live demo** → `/studio`.
 1. **WhatsApp pane** → tap **🎙️ Demo Hindi Voice** (or record your own voice note) → Gemini extracts name/trade/years/area and replies in Hindi (spoken aloud via Web Speech API).
 2. A random **2-digit liveness code** appears. Tap **⚠️ Demo Unsafe Video** → rejected with safety tips (worked on a live circuit). Tap **📹 Demo Good Wiring Video** (or upload a real video) → 5-point rubric, score, level → **Skill Card**.
 3. **Employer Job Post** tab → Electrician · Koramangala · ₹700/day → **Fair Wage Shield** flashes amber (18% below fair range) → post → ranked matches (Haversine distance + Trust Score) → localized WhatsApp job alert lands in the chat.
@@ -34,7 +35,8 @@ npm run dev                  # http://localhost:3000
 | `src/lib/engine.ts` | WhatsApp state machine `NEW → AWAITING_PROFILE → AWAITING_VIDEO → VERIFIED_IDLE → JOB_OFFERED → ACTIVE_JOB → AWAITING_RATING`, job creation/matching, vouch & rating actions |
 | `src/app/api/chat/route.ts` | Worker WhatsApp messages (text / voice / video / demo modes) |
 | `src/app/api/jobs/route.ts` | `GET` snapshot · `POST` create job (form or voice) · `PATCH` god-mode (`vouch`, `complete_and_rate`, `reset`) |
-| `src/app/page.tsx` | Split-screen Demo Studio: WhatsApp simulator (40%) + live dashboard (60%) |
+| `src/app/page.tsx` | Landing page with live network stats |
+| `src/app/studio/page.tsx` | Split-screen Demo Studio: WhatsApp simulator + live dashboard |
 | `src/components/LiveMap.tsx` | Raw Leaflet + OpenStreetMap map (no react-leaflet) |
 | `src/app/card/[id]/page.tsx` | Public mobile-first Skill Card with live signature verification + QR |
 

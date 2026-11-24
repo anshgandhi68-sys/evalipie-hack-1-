@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { BadgeCheck, Briefcase, Lock, MapPin, ShieldAlert, ShieldCheck, Star, ThumbsUp } from "lucide-react";
 import { LEVEL_HI, RUBRICS, TRADE_LABEL, calculateTrustScore, credentialPayload, getStore, verifyCredential } from "@/lib/store";
 import StickerButton from "./StickerButton";
+import { BrandLink } from "@/components/Brand";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export default async function SkillCardPage({ params, searchParams }: { params: 
           <h1 className="text-xl font-bold text-white">Skill Card not found</h1>
           <p className="mt-1 text-sm text-slate-400">This worker hasn&apos;t completed video verification yet.</p>
           <Link href="/" className="mt-4 inline-block text-sm font-medium text-emerald-400 hover:underline">
-            ← Back to HunarID
+            ← Back to Evalipie.in
           </Link>
         </div>
       </main>
@@ -47,11 +48,9 @@ export default async function SkillCardPage({ params, searchParams }: { params: 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 px-4 py-8 text-slate-200">
       <div className="mx-auto w-full max-w-md space-y-4">
-        <div className="no-print flex items-center justify-between text-xs text-slate-500">
-          <Link href="/" className="font-semibold text-emerald-400">
-            HunarID
-          </Link>
-          <span>Public Digital Skill Card</span>
+        <div className="no-print mb-2 flex items-center justify-between text-xs text-slate-500">
+          <BrandLink size={26} textClass="text-base text-white" />
+          <span className="rounded-full border border-slate-800 px-2.5 py-1">Public Digital Skill Card</span>
         </div>
 
         {/* Verification banner */}
@@ -67,7 +66,7 @@ export default async function SkillCardPage({ params, searchParams }: { params: 
         <section id="skill-card" className="overflow-hidden rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-900 via-emerald-950 to-slate-950 shadow-2xl shadow-emerald-900/30">
           <div className="p-5">
             <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-emerald-300/70">
-              <span>HunarID · Skill Card</span>
+              <span>Evalipie.in · Skill Card</span>
               <span>#{w.id.toUpperCase()}</span>
             </div>
             <div className="mt-4 flex items-center gap-4">

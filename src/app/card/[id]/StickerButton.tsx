@@ -26,7 +26,7 @@ export default function StickerButton({ qr, name, trade, trust, id }: { qr: stri
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 46px system-ui, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("HunarID ✓", W / 2, 80);
+    ctx.fillText("Evalipie.in ✓", W / 2, 80);
     ctx.font = "22px system-ui, sans-serif";
     ctx.fillStyle = "#a7f3d0";
     ctx.fillText("Your skill is your ID · आपका हुनर, आपकी पहचान", W / 2, 112);
@@ -49,7 +49,7 @@ export default function StickerButton({ qr, name, trade, trust, id }: { qr: stri
     ctx.fillText("Scan to verify · Cryptographically signed", W / 2, 750);
 
     const a = document.createElement("a");
-    a.download = `hunarid-sticker-${id}.png`;
+    a.download = `evalipie-sticker-${id}.png`;
     a.href = c.toDataURL("image/png");
     a.click();
   };
