@@ -4,10 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { BRAND_BLUE, Globe, LogoMark, Logotype } from "@/components/Brand";
+import LiveRecorder from "@/components/LiveRecorder";
 import {
   ArrowLeft,
   ArrowUpRight,
   BadgeCheck,
+  Camera,
   Check,
   CheckCheck,
   Loader2,
@@ -77,6 +79,40 @@ function fileToBase64(file: Blob): Promise<string> {
     r.readAsDataURL(file);
   });
 }
+
+/** Claim a message for speech across tabs so it is spoken exactly once. */
+function claimSpeech(id: string) {
+  try {
+    const k = `ev-tts-${id}`;
+    if (localStorage.getItem(k)) return false;
+    localStorage.setItem(k, String(Date.now()));
+  } catch {
+    /* storage unavailable — fall back to per-tab dedupe */
+  }
+  return true;
+}
+
+function speechLine(m: ChatMessage): { text: string; lang: string } | null {
+  if (!m.text) return null;
+  let text = m.text
+    .replace(/[*_]/g, "")
+    .replace(/\p{Extended_Pictographic}/gu, "")
+    .replace(/₹/g, m.lang === "en" ? "rupees " : "रुपये ")
+    .split("\n\n")[0]
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 260);
+  if (m.kind === "liveness" && m.meta?.code) text = `${text} ${String(m.meta.code).split("").join(" ")}`;
+  if (!text) return null;
+  return { text, lang: SPEECH_LANG[m.lang || "hi"] || "hi-IN" };
+}
+
+const TASKS: Record<Trade, string> = {
+  electrician: "Wire a switchboard / socket point",
+  plumber: "Fit a tap / join a CPVC pipe",
+  mason: "Lay a course of bricks with mortar",
+  carpenter: "Make a joint / fix a hinge",
+};
 
 /** Render WhatsApp-style *bold* */
 function Rich({ text }: { text: string }) {
@@ -162,7 +198,24 @@ export default function DemoStudio() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  // ---- Voice-out (Web Speech API) for new bot replies
+  // ---- Voice-out (Web Speech API) for new bot replies.
+  // Guards against "double voice":
+  //  • each message is spoken once, even with several studio tabs open (localStorage claim)
+  //  • only the visible tab speaks
+  //  • new replies cancel anything still playing instead of talking over it
+  useEffect(() => {
+    try {
+      const now = Date.now();
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k?.startsWith("ev-tts-") && now - Number(localStorage.getItem(k)) > 10 * 60 * 1000) localStorage.removeItem(k);
+      }
+    } catch {
+      /* storage unavailable */
+    }
+    return () => window.speechSynthesis?.cancel();
+  }, []);
+
   useEffect(() => {
     if (!snap) return;
     const bots = snap.chat.filter((m) => m.from === "bot");
@@ -175,22 +228,29 @@ export default function DemoStudio() {
     if (!fresh.length) return;
     fresh.forEach((m) => spoken.current.add(m.id));
     if (!tts || typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    fresh.forEach((m) => {
-      if (!m.text) return;
-      const clean = m.text
-        .replace(/[*_]/g, "")
-        .replace(/\p{Extended_Pictographic}/gu, "")
-        .replace(/₹/g, m.lang === "en" ? "rupees " : "रुपये ")
-        .split("\n\n")[0]
-        .slice(0, 260);
-      const u = new SpeechSynthesisUtterance(clean);
-      u.lang = SPEECH_LANG[m.lang || "hi"] || "hi-IN";
-      const voice = window.speechSynthesis.getVoices().find((v) => v.lang === u.lang);
-      if (voice) u.voice = voice;
-      u.rate = 1.02;
-      window.speechSynthesis.speak(u);
-    });
+    if (document.visibilityState !== "visible") return;
+    const mine = fresh.filter((m) => claimSpeech(m.id));
+    if (!mine.length) return;
+    const lines = mine.map(speechLine).filter((l): l is { text: string; lang: string } => !!l);
+    if (!lines.length) return;
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    window.setTimeout(() => {
+      const voices = synth.getVoices();
+      lines.forEach(({ text, lang }) => {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = lang;
+        const voice = voices.find((v) => v.lang === lang) ?? voices.find((v) => v.lang.startsWith(lang.slice(0, 2)));
+        if (voice) u.voice = voice;
+        u.rate = 1.02;
+        synth.speak(u);
+      });
+    }, 80);
   }, [snap, tts]);
+
+  useEffect(() => {
+    if (!tts) window.speechSynthesis?.cancel();
+  }, [tts]);
 
   const sendChat = useCallback(
     async (payload: Record<string, unknown>) => {
@@ -441,7 +501,11 @@ function WhatsAppChat({
   const scroller = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const recSecsRef = useRef(0);
+  const [camOpen, setCamOpen] = useState(false);
+  const [localVideos, setLocalVideos] = useState<Record<string, string>>({});
   const state = snap.demo.state;
+  const hosted = typeof window !== "undefined" && !/^(localhost|127\.|\[::1\])/.test(window.location.hostname);
+  const maxUploadMb = hosted ? 3.2 : 19;
   const lastCount = useRef(0);
 
   useEffect(() => {
@@ -459,6 +523,7 @@ function WhatsAppChat({
   };
 
   const startRec = async () => {
+    window.speechSynthesis?.cancel(); // don't record the bot's own voice
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"].find((m) => MediaRecorder.isTypeSupported(m)) || "";
@@ -490,15 +555,35 @@ function WhatsAppChat({
     recRef.current?.stop();
   };
 
+  const sendVideo = async (blob: Blob, mime: string, name: string) => {
+    const url = URL.createObjectURL(blob);
+    setLocalVideos((v) => ({ ...v, [name]: url }));
+    const b64 = await fileToBase64(blob);
+    await send({ videoBase64: b64, videoMime: mime || "video/mp4", videoName: name });
+  };
+
   const onVideo = async (f: File | undefined) => {
     if (!f) return;
-    if (f.size > 19 * 1024 * 1024) {
-      setToast({ text: "Video too large (max ~19MB). Trim to 30s or use the demo video.", tone: "err" });
+    if (f.size > maxUploadMb * 1024 * 1024) {
+      setToast({ text: `Video too large (max ~${maxUploadMb} MB here). Use “Record live” — it compresses automatically.`, tone: "err" });
+      if (fileRef.current) fileRef.current.value = "";
       return;
     }
-    const b64 = await fileToBase64(f);
-    await send({ videoBase64: b64, videoMime: f.type || "video/mp4", videoName: f.name });
+    await sendVideo(f, f.type || "video/mp4", f.name);
     if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const onLiveSend = (blob: Blob, mime: string) => {
+    const ext = mime.includes("mp4") ? "mp4" : "webm";
+    void sendVideo(blob, mime, `live_${Date.now().toString(36)}.${ext}`);
+  };
+
+  const openCamera = () => {
+    if (state !== "AWAITING_VIDEO") {
+      setToast({ text: "Finish the voice intro first — the bot will then ask for your skill video.", tone: "err" });
+      return;
+    }
+    setCamOpen(true);
   };
 
   const demoName = snap.workers.find((w) => w.isDemo)?.name;
@@ -531,7 +616,7 @@ function WhatsAppChat({
             </div>
             {snap.chat.length === 0 && <EmptyChat />}
             {snap.chat.map((m) => (
-              <Bubble key={m.id} m={m} snap={snap} send={send} busy={busy} />
+              <Bubble key={m.id} m={m} snap={snap} send={send} busy={busy} onRecord={openCamera} videoUrl={m.kind === "video" ? localVideos[m.text.replace(/^📹\s*/, "")] : undefined} />
             ))}
             {busy && (
               <div className="flex">
@@ -550,6 +635,9 @@ function WhatsAppChat({
             <div className="flex flex-1 items-center gap-2 rounded-full bg-white px-3 py-2 shadow-sm">
               <button onClick={() => fileRef.current?.click()} disabled={busy} title="Upload skill video" className="text-[#54656f] hover:text-[#008069] disabled:opacity-40">
                 <Paperclip className="h-5 w-5" />
+              </button>
+              <button onClick={openCamera} disabled={busy} title="Record live skill video" className={`disabled:opacity-40 ${state === "AWAITING_VIDEO" ? "text-[#008069]" : "text-[#54656f] hover:text-[#008069]"}`}>
+                <Camera className="h-5 w-5" />
               </button>
               {recording ? (
                 <div className="flex flex-1 items-center gap-2 text-sm text-rose-600">
@@ -590,7 +678,10 @@ function WhatsAppChat({
           <QuickBtn disabled={busy} onClick={() => send({ demoMode: "hindi_voice" })} active={state === "NEW" || state === "AWAITING_PROFILE"}>
             <Mic className="h-3.5 w-3.5" /> Hindi voice note
           </QuickBtn>
-          <QuickBtn disabled={busy} onClick={() => send({ demoMode: "good_wiring" })} active={state === "AWAITING_VIDEO"}>
+          <QuickBtn disabled={busy} onClick={openCamera} active={state === "AWAITING_VIDEO"}>
+            <Camera className="h-3.5 w-3.5" /> Record live video
+          </QuickBtn>
+          <QuickBtn disabled={busy} onClick={() => send({ demoMode: "good_wiring" })}>
             <Video className="h-3.5 w-3.5" /> Good wiring video
           </QuickBtn>
           <QuickBtn disabled={busy} onClick={() => send({ demoMode: "unsafe_wiring" })} warn>
@@ -598,6 +689,17 @@ function WhatsAppChat({
           </QuickBtn>
         </div>
       </div>
+
+      <LiveRecorder
+        open={camOpen}
+        code={snap.demo.livenessCode}
+        task={(() => {
+          const t = snap.workers.find((w) => w.isDemo)?.trade;
+          return t ? TASKS[t] : undefined;
+        })()}
+        onClose={() => setCamOpen(false)}
+        onSend={onLiveSend}
+      />
     </div>
   );
 }
@@ -632,7 +734,21 @@ function QuickBtn({ children, onClick, disabled, active, warn }: { children: Rea
   );
 }
 
-function Bubble({ m, snap, send, busy }: { m: ChatMessage; snap: Snapshot; send: (p: Record<string, unknown>) => Promise<void>; busy: boolean }) {
+function Bubble({
+  m,
+  snap,
+  send,
+  busy,
+  onRecord,
+  videoUrl,
+}: {
+  m: ChatMessage;
+  snap: Snapshot;
+  send: (p: Record<string, unknown>) => Promise<void>;
+  busy: boolean;
+  onRecord: () => void;
+  videoUrl?: string;
+}) {
   const mine = m.from === "user";
   const base = `pop-in relative max-w-[85%] rounded-lg px-2.5 pt-1.5 pb-1 text-[14px] leading-snug text-[#111b21] shadow-sm ${
     mine ? "ml-auto rounded-tr-none bg-[#d9fdd3]" : "rounded-tl-none bg-white"
@@ -669,6 +785,18 @@ function Bubble({ m, snap, send, busy }: { m: ChatMessage; snap: Snapshot; send:
 
   if (m.kind === "video") {
     const demo = m.meta?.demo as string | undefined;
+    if (videoUrl && !demo) {
+      return (
+        <div className={base} style={{ width: 240 }}>
+          <video src={videoUrl} controls playsInline className="h-40 w-full rounded-md bg-black object-cover" />
+          <div className="mt-1 flex items-center gap-1 truncate text-[12px] text-[#3b4a54]">
+            {m.text.includes("live_") ? <span className="rounded bg-rose-500 px-1 text-[9px] font-bold text-white">LIVE</span> : null}
+            {m.text}
+          </div>
+          {meta}
+        </div>
+      );
+    }
     return (
       <div className={base} style={{ width: 240 }}>
         <div className={`relative flex h-36 items-center justify-center overflow-hidden rounded-md ${demo === "unsafe_wiring" ? "bg-gradient-to-br from-[#7c2d12] to-slate-900" : "bg-gradient-to-br from-slate-600 to-slate-900"}`}>
@@ -697,6 +825,11 @@ function Bubble({ m, snap, send, busy }: { m: ChatMessage; snap: Snapshot; send:
           ))}
         </div>
         <div className="text-center text-[11px] text-[#667781]">Anti-fraud: proves it&apos;s really you, live 🔐</div>
+        {snap.demo.state === "AWAITING_VIDEO" && snap.demo.livenessCode === code && (
+          <button onClick={onRecord} disabled={busy} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-[#00a884] py-2 text-[13px] font-semibold text-white hover:bg-[#008069] disabled:opacity-50">
+            <Camera className="h-4 w-4" /> Record live video now
+          </button>
+        )}
         {translation}
         {meta}
       </div>
