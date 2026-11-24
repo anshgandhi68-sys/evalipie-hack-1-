@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HunarID — Your skill is your ID",
+  title: "Evalipie · HunarID — Your skill is your ID",
   description: "Voice-first WhatsApp AI agent that verifies blue-collar skills and protects fair wages.",
 };
 
