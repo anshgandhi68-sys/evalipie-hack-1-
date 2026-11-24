@@ -15,7 +15,7 @@ export default function StickerButton({ qr, name, trade, trust, id }: { qr: stri
     // background + border
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = "#065f46";
+    ctx.fillStyle = "#214BD4";
     roundRect(ctx, 16, 16, W - 32, H - 32, 36);
     ctx.fill();
     ctx.fillStyle = "#ffffff";
@@ -24,11 +24,12 @@ export default function StickerButton({ qr, name, trade, trust, id }: { qr: stri
 
     // header
     ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 46px system-ui, sans-serif";
+    ctx.font = "300 46px system-ui, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("Evalipie.in ✓", W / 2, 80);
+    ctx.fillStyle = "#D5DC5C";
+    ctx.fillText("E V A L I P I E . I N", W / 2, 80);
     ctx.font = "22px system-ui, sans-serif";
-    ctx.fillStyle = "#a7f3d0";
+    ctx.fillStyle = "rgba(213,220,92,.85)";
     ctx.fillText("Your skill is your ID · आपका हुनर, आपकी पहचान", W / 2, 112);
 
     // QR
@@ -42,10 +43,10 @@ export default function StickerButton({ qr, name, trade, trust, id }: { qr: stri
     ctx.font = "bold 40px system-ui, sans-serif";
     ctx.fillText(name, W / 2, 660);
     ctx.font = "26px system-ui, sans-serif";
-    ctx.fillStyle = "#d1fae5";
+    ctx.fillStyle = "rgba(255,255,255,.85)";
     ctx.fillText(`${trade} · Trust ${trust}`, W / 2, 702);
     ctx.font = "20px system-ui, sans-serif";
-    ctx.fillStyle = "#6ee7b7";
+    ctx.fillStyle = "#D5DC5C";
     ctx.fillText("Scan to verify · Cryptographically signed", W / 2, 750);
 
     const a = document.createElement("a");
@@ -56,10 +57,10 @@ export default function StickerButton({ qr, name, trade, trust, id }: { qr: stri
 
   return (
     <div className="no-print mt-4 flex justify-center gap-2">
-      <button onClick={download} className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-emerald-500">
+      <button onClick={download} className="flex items-center gap-2 rounded-full bg-[#214BD4] px-5 py-2.5 text-sm font-medium text-white shadow hover:bg-[#1B1D22]">
         <Download className="h-4 w-4" /> Download Toolbox QR Sticker
       </button>
-      <button onClick={() => window.print()} title="Print" className="flex items-center rounded-xl bg-slate-200 px-3 py-2.5 text-slate-700 hover:bg-slate-300">
+      <button onClick={() => window.print()} title="Print" className="flex items-center rounded-full border border-[rgba(27,29,34,.15)] px-3.5 py-2.5 text-[#1B1D22] hover:bg-[#E9E4D8]">
         <Printer className="h-4 w-4" />
       </button>
     </div>

@@ -35,7 +35,7 @@ npm run dev                  # http://localhost:3000  (landing) · /studio (live
 | `src/lib/engine.ts` | WhatsApp state machine `NEW → AWAITING_PROFILE → AWAITING_VIDEO → VERIFIED_IDLE → JOB_OFFERED → ACTIVE_JOB → AWAITING_RATING`, job creation/matching, vouch & rating actions |
 | `src/app/api/chat/route.ts` | Worker WhatsApp messages (text / voice / video / demo modes) |
 | `src/app/api/jobs/route.ts` | `GET` snapshot · `POST` create job (form or voice) · `PATCH` god-mode (`vouch`, `complete_and_rate`, `reset`) |
-| `src/app/page.tsx` | Landing page with live network stats |
+| `src/app/page.tsx` + `src/components/landing/*` | Editorial landing page: particle hero, sticky story, manifesto, gallery, product story, axonometric figures, pricing, ⌘K palette |
 | `src/app/studio/page.tsx` | Split-screen Demo Studio: WhatsApp simulator + live dashboard |
 | `src/components/LiveMap.tsx` | Raw Leaflet + OpenStreetMap map (no react-leaflet) |
 | `src/app/card/[id]/page.tsx` | Public mobile-first Skill Card with live signature verification + QR |

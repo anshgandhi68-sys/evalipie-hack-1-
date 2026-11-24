@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { LogoMark, Wordmark } from "@/components/Brand";
+import { BRAND_LIME, LogoMark, Logotype } from "@/components/Brand";
 import {
   Activity,
   BadgeCheck,
@@ -213,6 +213,27 @@ export default function DemoStudio() {
     [apply]
   );
 
+  // Deep links from the landing page: /studio?q=<intro text> and /studio?tab=employer
+  const booted = useRef(false);
+  useEffect(() => {
+    if (!snap || booted.current) return;
+    booted.current = true;
+    const sp = new URLSearchParams(window.location.search);
+    const t = sp.get("tab");
+    if (t === "employer" || t === "god" || t === "map") setTab(t);
+    const q = sp.get("q")?.trim();
+    if (q || t) window.history.replaceState(null, "", "/studio");
+    if (q) {
+      (async () => {
+        if (snap.demo.state !== "NEW") {
+          await fetch("/api/jobs", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "reset" }) });
+          spoken.current = new Set();
+        }
+        await sendChat({ text: q });
+      })();
+    }
+  }, [snap, sendChat]);
+
   const demoWorker = snap?.workers.find((w) => w.isDemo) ?? null;
 
   if (!snap) {
@@ -292,8 +313,8 @@ function Header({ snap, demoWorker }: { snap: Snapshot; demoWorker: PublicWorker
         </Link>
         <div>
           <div className="flex items-center gap-2">
-            <Link href="/" className="text-lg text-white hover:opacity-90">
-              <Wordmark />
+            <Link href="/" className="flex items-center py-1 hover:opacity-90" aria-label="Evalipie.in home">
+              <Logotype height={17} color={BRAND_LIME} gap="#0f172a" />
             </Link>
             <span className="hidden rounded-md bg-slate-800 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 2xl:inline">Demo Studio</span>
             <span
@@ -462,7 +483,7 @@ function WhatsAppChat({
     <div className="mx-auto flex h-full w-full max-w-[520px] flex-col overflow-hidden rounded-[28px] border-[6px] border-slate-800 bg-black shadow-2xl shadow-black/50">
       {/* WA header */}
       <div className="flex items-center gap-3 bg-[#008069] px-3 py-2.5 text-white">
-        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white"><LogoMark size={30} /></div>
+        <div className="h-9 w-9 overflow-hidden rounded-full"><LogoMark size={36} /></div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1 text-[15px] font-semibold leading-tight">
             Evalipie.in <BadgeCheck className="h-4 w-4 fill-[#25D366] text-[#008069]" />
