@@ -224,12 +224,12 @@ export default function DemoStudio() {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-950 text-slate-200">
       {/* LEFT: WhatsApp */}
-      <section className="flex h-full w-[40%] min-w-[380px] flex-col border-r border-slate-800 bg-slate-900 p-4">
+      <section className="flex h-full w-[38%] min-w-[360px] max-w-[560px] flex-col border-r border-slate-800 bg-slate-900 p-3 xl:p-4">
         <WhatsAppChat snap={snap} busy={busy} tts={tts} setTts={setTts} send={sendChat} setToast={setToast} />
       </section>
 
       {/* RIGHT: Dashboard */}
-      <section className="flex h-full w-[60%] flex-col">
+      <section className="flex h-full min-w-0 flex-1 flex-col">
         <Header snap={snap} demoWorker={demoWorker} />
         <nav className="flex gap-1 border-b border-slate-800 px-5">
           {(
@@ -289,7 +289,7 @@ function Header({ snap, demoWorker }: { snap: Snapshot; demoWorker: PublicWorker
           <div className="flex items-center gap-2">
             <h1 className="text-lg font-bold tracking-tight text-white">HunarID</h1>
             <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ${
+              className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ${
                 snap.aiMode === "gemini" ? "bg-violet-500/15 text-violet-300 ring-violet-500/30" : "bg-slate-700/50 text-slate-300 ring-slate-600"
               }`}
               title={snap.aiMode === "gemini" ? "Live Gemini 2.5 Flash" : "No GEMINI_API_KEY — deterministic demo fallback"}
@@ -297,13 +297,13 @@ function Header({ snap, demoWorker }: { snap: Snapshot; demoWorker: PublicWorker
               {snap.aiMode === "gemini" ? "● Gemini 2.5 Flash live" : "● Demo AI mode"}
             </span>
           </div>
-          <p className="text-xs text-slate-400">Your skill is your ID · आपका हुनर, आपकी पहचान</p>
+          <p className="whitespace-nowrap text-xs text-slate-400">Your skill is your ID<span className="hidden 2xl:inline"> · आपका हुनर, आपकी पहचान</span></p>
         </div>
       </div>
       <div className="ml-auto flex items-center gap-2">
         <Kpi icon={<Users className="h-3.5 w-3.5" />} label="Verified" value={String(verified)} />
         <Kpi icon={<Briefcase className="h-3.5 w-3.5" />} label="Live jobs" value={String(openJobs)} />
-        <Kpi icon={<Activity className="h-3.5 w-3.5" />} label="Avg trust" value={String(avgTrust)} />
+        <div className="hidden xl:block"><Kpi icon={<Activity className="h-3.5 w-3.5" />} label="Avg trust" value={String(avgTrust)} /></div>
         <Kpi icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Wages protected" value={inr(snap.wageProtectedInr)} accent />
         <TrustWidget w={demoWorker} />
       </div>
@@ -494,7 +494,7 @@ function WhatsAppChat({
       </div>
 
       {/* Quick test buttons */}
-      <div className="flex gap-1.5 overflow-x-auto bg-[#f0f2f5] px-2 pt-2 scroll-thin">
+      <div className="flex flex-wrap justify-center gap-1.5 bg-[#f0f2f5] px-2 pt-2">
         <QuickBtn disabled={busy} onClick={() => send({ demoMode: "hindi_voice" })} highlight={state === "NEW" || state === "AWAITING_PROFILE"}>
           🎙️ Demo Hindi Voice
         </QuickBtn>
@@ -551,7 +551,7 @@ function QuickBtn({ children, onClick, disabled, highlight, warn }: { children: 
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm transition disabled:opacity-40 ${
+      className={`whitespace-nowrap rounded-full border px-2.5 py-1.5 text-[11.5px] font-semibold shadow-sm transition disabled:opacity-40 ${
         warn
           ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
           : highlight
@@ -790,10 +790,10 @@ function MapTab({ snap }: { snap: Snapshot }) {
     return () => clearInterval(t);
   }, []);
   return (
-    <div className="grid h-full grid-cols-[1fr_320px] gap-4">
+    <div className="grid h-full grid-cols-[1fr_minmax(250px,320px)] gap-4">
       <div className="relative min-h-0 rounded-xl border border-slate-800 bg-slate-900">
         <LiveMap workers={snap.workers} jobs={snap.jobs} />
-        <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] flex gap-3 rounded-lg bg-slate-950/85 px-3 py-2 text-[11px] text-slate-300 backdrop-blur">
+        <div className="pointer-events-none absolute bottom-3 left-3 right-3 z-[1000] flex w-fit max-w-[calc(100%-1.5rem)] flex-wrap gap-x-3 gap-y-1 whitespace-nowrap rounded-lg bg-slate-950/85 px-3 py-2 text-[11px] text-slate-300 backdrop-blur">
           <Legend c="#34d399" l="Expert" />
           <Legend c="#38bdf8" l="Skilled" />
           <Legend c="#f59e0b" l="Beginner" />
