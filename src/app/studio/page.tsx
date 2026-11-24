@@ -80,6 +80,40 @@ function fileToBase64(file: Blob): Promise<string> {
   });
 }
 
+/**
+ * Speak text with a single utterance.
+ * - stops anything still playing first and waits until the engine is idle
+ *   (Chrome's online voices keep talking briefly after cancel(), which caused overlap)
+ * - prefers an on-device voice for the language
+ * - ignores an identical sentence spoken in the last 8 seconds
+ */
+let lastSpeech = { text: "", at: 0 };
+function speakOnce(raw: string, lang: string) {
+  const synth = window.speechSynthesis;
+  const text = raw.slice(0, 420);
+  const now = Date.now();
+  if (text === lastSpeech.text && now - lastSpeech.at < 8000) return;
+  lastSpeech = { text, at: now };
+  synth.cancel();
+  const started = Date.now();
+  const go = () => {
+    if ((synth.speaking || synth.pending) && Date.now() - started < 600) {
+      synth.cancel();
+      window.setTimeout(go, 60);
+      return;
+    }
+    const voices = synth.getVoices();
+    const sameLang = voices.filter((v) => v.lang === lang || v.lang.replace("_", "-") === lang);
+    const voice = sameLang.find((v) => v.localService) ?? sameLang[0] ?? voices.find((v) => v.lang.startsWith(lang.slice(0, 2)));
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang;
+    if (voice) u.voice = voice;
+    u.rate = 1.02;
+    synth.speak(u);
+  };
+  window.setTimeout(go, 120);
+}
+
 /** Claim a message for speech across tabs so it is spoken exactly once. */
 function claimSpeech(id: string) {
   try {
@@ -229,23 +263,12 @@ export default function DemoStudio() {
     fresh.forEach((m) => spoken.current.add(m.id));
     if (!tts || typeof window === "undefined" || !("speechSynthesis" in window)) return;
     if (document.visibilityState !== "visible") return;
+    if ((window as unknown as { __evRecording?: boolean }).__evRecording) return; // never talk while the worker is recording
     const mine = fresh.filter((m) => claimSpeech(m.id));
-    if (!mine.length) return;
     const lines = mine.map(speechLine).filter((l): l is { text: string; lang: string } => !!l);
     if (!lines.length) return;
-    const synth = window.speechSynthesis;
-    synth.cancel();
-    window.setTimeout(() => {
-      const voices = synth.getVoices();
-      lines.forEach(({ text, lang }) => {
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = lang;
-        const voice = voices.find((v) => v.lang === lang) ?? voices.find((v) => v.lang.startsWith(lang.slice(0, 2)));
-        if (voice) u.voice = voice;
-        u.rate = 1.02;
-        synth.speak(u);
-      });
-    }, 80);
+    // ONE utterance per bot turn: several replies are merged so they can never stack or overlap.
+    speakOnce(lines.map((l) => l.text).join(" ... "), lines[lines.length - 1].lang);
   }, [snap, tts]);
 
   useEffect(() => {
@@ -524,14 +547,16 @@ function WhatsAppChat({
 
   const startRec = async () => {
     window.speechSynthesis?.cancel(); // don't record the bot's own voice
+    (window as unknown as { __evRecording?: boolean }).__evRecording = true;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
       const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"].find((m) => MediaRecorder.isTypeSupported(m)) || "";
       const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
       chunks.current = [];
       rec.ondataavailable = (e) => e.data.size && chunks.current.push(e.data);
       rec.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        (window as unknown as { __evRecording?: boolean }).__evRecording = false;
         const blob = new Blob(chunks.current, { type: rec.mimeType || "audio/webm" });
         const b64 = await fileToBase64(blob);
         await send({ audioBase64: b64, audioMime: (rec.mimeType || "audio/webm").split(";")[0], audioSeconds: recSecsRef.current });
@@ -546,6 +571,7 @@ function WhatsAppChat({
         setRecSecs(recSecsRef.current);
       }, 1000);
     } catch {
+      (window as unknown as { __evRecording?: boolean }).__evRecording = false;
       setToast({ text: "Microphone blocked — use “Demo Hindi voice” instead", tone: "err" });
     }
   };

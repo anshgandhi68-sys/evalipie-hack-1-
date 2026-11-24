@@ -99,6 +99,7 @@ export default function LiveRecorder({
   useEffect(() => {
     if (!open) return;
     window.speechSynthesis?.cancel(); // never record the bot's own voice
+    (window as unknown as { __evRecording?: boolean }).__evRecording = true;
     setReview(null);
     setElapsed(0);
     startCamera(facing);
@@ -106,6 +107,7 @@ export default function LiveRecorder({
       clearTick();
       if (recRef.current && recRef.current.state !== "inactive") recRef.current.stop();
       stopStream();
+      (window as unknown as { __evRecording?: boolean }).__evRecording = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -223,7 +225,7 @@ export default function LiveRecorder({
                 style={{ transform: isUserFacing.current ? "scaleX(-1)" : undefined }}
               />
             )}
-            {phase === "review" && review && <video src={review.url} controls playsInline autoPlay className="h-full w-full bg-black object-contain" />}
+            {phase === "review" && review && <video src={review.url} controls playsInline className="h-full w-full bg-black object-contain" />}
 
             {phase === "starting" && (
               <div className="absolute inset-0 flex items-center justify-center text-sm text-white/80">
