@@ -7,9 +7,9 @@ import type { Job, PublicWorker } from "@/lib/store";
 type L = typeof import("leaflet");
 
 const LEVEL_COLOR: Record<string, string> = {
-  Beginner: "#f59e0b",
-  Skilled: "#38bdf8",
-  Expert: "#34d399",
+  Beginner: "#D9822B",
+  Skilled: "#2A9D8F",
+  Expert: "#214BD4",
 };
 
 const TRADE_EMOJI: Record<string, string> = { electrician: "⚡", plumber: "🔧", mason: "🧱", carpenter: "🪚" };
@@ -35,7 +35,7 @@ export default function LiveMap({ workers, jobs }: { workers: PublicWorker[]; jo
         .tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
           maxZoom: 19,
-          className: "osm-dark",
+          className: "osm-paper",
         })
         .addTo(map);
       mapRef.current = map;
@@ -93,7 +93,7 @@ export default function LiveMap({ workers, jobs }: { workers: PublicWorker[]; jo
               [w.lat, w.lng],
             ],
             {
-              color: assigned ? "#25D366" : "#64748b",
+              color: assigned ? "#214BD4" : "#77746C",
               weight: assigned ? 3 : 1.5,
               dashArray: assigned ? undefined : "4 6",
               opacity: idx === 0 ? 0.9 : 0.45,
@@ -105,13 +105,13 @@ export default function LiveMap({ workers, jobs }: { workers: PublicWorker[]; jo
 
     workers.forEach((w) => {
       if (!w.verified && !w.isDemo) return;
-      const color = w.verified ? LEVEL_COLOR[w.level] : "#94a3b8";
+      const color = w.verified ? LEVEL_COLOR[w.level] : "#77746C";
       const popup = `<div style="font-family:system-ui;min-width:170px">
         <div style="font-weight:700;font-size:14px">${w.name}${w.isDemo ? " 🟢 LIVE" : ""}</div>
         <div style="color:#475569;font-size:12px">${TRADE_EMOJI[w.trade]} ${w.trade} · ${w.verified ? w.level : "verifying…"} · ${w.area}</div>
         <div style="margin-top:6px;font-size:12px">Trust <b>${w.trustScore}</b> · ${w.jobsCompleted} jobs · ${w.vouches.length} vouches</div>
         <div style="font-size:12px">${w.status === "on_job" ? "🟠 On a job" : "🟢 Available"}</div>
-        ${w.verified ? `<a href="/card/${w.id}" target="_blank" style="display:inline-block;margin-top:6px;color:#059669;font-weight:600;font-size:12px">View Skill Card →</a>` : ""}
+        ${w.verified ? `<a href="/card/${w.id}" target="_blank" style="display:inline-block;margin-top:6px;color:#214BD4;font-weight:600;font-size:12px">View Skill Card →</a>` : ""}
       </div>`;
       if (w.isDemo) {
         const icon = lib.divIcon({
@@ -125,10 +125,10 @@ export default function LiveMap({ workers, jobs }: { workers: PublicWorker[]; jo
         lib
           .circleMarker([w.lat, w.lng], {
             radius: 6 + Math.round(w.trustScore / 25),
-            color: w.status === "on_job" ? "#f97316" : color,
+            color: w.status === "on_job" ? "#C2410C" : "#FBF9F4",
             weight: 2,
             fillColor: color,
-            fillOpacity: w.status === "on_job" ? 0.25 : 0.7,
+            fillOpacity: w.status === "on_job" ? 0.35 : 0.9,
           })
           .bindPopup(popup)
           .addTo(layer);
